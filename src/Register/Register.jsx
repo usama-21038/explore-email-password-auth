@@ -1,21 +1,25 @@
 import React from 'react';
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from '../firebase.init';
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa";
 import { useState } from 'react';
+import { Link } from 'react-router';
+import { sendEmailVerification } from 'firebase/auth';
 const Register = () => {
 
     const [showPassword, setShowPassword] = useState(false);
 
     const handleRegister = event => {
         event.preventDefault();
+        const userName = event.target.userName.value;
+        const photo = event.target.photo.value;
         const email = event.target.email.value;
         const password = event.target.password.value;
         const terms = event.target.terms.checked;
-        console.log(email, password,terms);
+        console.log(email, password, terms);
 
-        if(!terms){
+        if (!terms) {
             alert('You must accept terms and conditions');
             return;
         }
@@ -23,7 +27,26 @@ const Register = () => {
         //create user,  =>upore thaka email ar pass ta niye kaj korbe
         createUserWithEmailAndPassword(auth, email, password)
             .then(result => {
-                console.log(result)
+                console.log(result);
+                // email verify logic will be added here
+                sendEmailVerification(auth.currentUser)
+                    .then(() => {
+                        // Email verification sent!
+                        // ...
+                        alert('Verification email sent. Please check your inbox.');
+                    })
+                    //update user profile
+                    const profile = {
+                        displayName: userName,
+                        photoURL:photo
+
+                    }
+                    updateProfile(auth.currentUser, profile)
+                    .then(() => {   
+                        console.log("user profile updated");
+                    })
+                    .catch(error => {
+                        console.log(error);});
             })
             .catch(error => {
                 console.log(error);
@@ -38,6 +61,14 @@ const Register = () => {
             <form className='space-y-4' onSubmit={handleRegister}>
                 {/* Email field */}
 
+                <label className="input validator join-item">
+                   
+                    <input type="name" name="userName" placeholder="Your Name" required />
+                </label>
+                <label className="input validator join-item">
+                   
+                    <input type="img" name="photo" placeholder="Photo URL" required />
+                </label>
                 <label className="input validator join-item">
                     <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <g
@@ -83,7 +114,7 @@ const Register = () => {
                             pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
                             title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
                         />
-                        <button onClick={() => { setShowPassword(!showPassword) }} className='btn btn-xs mr-[30px]'>
+                        <button onClick={() => { setShowPassword(!showPassword) }} className='btn btn-xs mr-7.5'>
                             {showPassword ? <FaEyeSlash /> : <FaEye />} </button>
                     </div>
                 </label>
@@ -93,11 +124,12 @@ const Register = () => {
                 </p>
                 <br />
                 <label className="label">
-                    <input type="checkbox" name='terms'  className="checkbox" />
+                    <input type="checkbox" name='terms' className="checkbox" />
                     Accept terms and conditions
                 </label>
                 <br />
                 <input className='btn bg-green-700' type="submit" value="submit" />
+                <p>Already have an account? Please <Link className='text-blue-600 underline' to="/login">Login</Link></p>
             </form>
         </div>
     );
